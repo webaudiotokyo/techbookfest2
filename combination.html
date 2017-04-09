@@ -1,0 +1,63 @@
+<body>
+  <div id="dropdown"></div>
+  <script>
+    let inputs, selectedInput, inputSelectEl
+    var audioctx = new AudioContext();
+    var osc
+
+    const createDropdown = () => {
+      const dropdownEl = document.querySelector('#dropdown')
+      inputSelectEl  = document.createElement('select')
+      dropdownEl.appendChild(inputSelectEl)
+    }
+
+    const midiMessageHandler = (ev) => {
+      const midiMessageHandler = (ev) => {
+        var data = ev.data;
+        if (144 <= data[0] && data[0] <= 159) {
+          var osc = new OscillatorNode(audioctx, {frequency: 440.0 * Math.pow(2.0, (data[1] - 69.0) / 12.0)});
+          osc.connect(audioctx.destination);
+          osc.start(0);
+        }
+        if (128 <= data[0] && data[0] <= 143) {
+          osc.stop(0);
+        }
+      }
+    }
+
+    const addListeners = () => {
+      inputSelectEl.addEventListener('change', ev => {
+        selectedInput = inputs.find(input => {
+          return input.name === inputSelectEl.value
+        })
+        console.log(`${inputSelectEl.value} was selected as an input`)
+
+        selectedInput.onmidimessage = midiMessageHandler
+      })
+    }
+
+    const renderDropdown = () => {
+      const inputPlaceholderEl = document.createElement('option')
+      inputPlaceholderEl.innerText = '(Select input)'
+      inputSelectEl.appendChild(inputPlaceholderEl)
+
+      inputs.forEach(input => {
+        const optionEl = document.createElement('option')
+        optionEl.innerText = input.name
+        inputSelectEl.appendChild(optionEl)
+      })
+    }
+
+    const main = () => {
+      createDropdown()
+      addListeners()
+      const options = {sysex: false}
+      navigator.requestMIDIAccess(options).then(midi => {
+        inputs  = Array.from(midi.inputs).map(input => input[1])
+        renderDropdown()
+      })
+    }
+
+    main()
+  </script>
+</body>

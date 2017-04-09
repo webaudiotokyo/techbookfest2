@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Web MIDI API</title>
+</head>
+<body>
+  <div id="dropdown"></div>
+  <div id="keyboard"></div>
+  <script>
+    let inputs, outputs,
+    selectedInput, selectedOutput,
+    inputSelectEl, outputSelectEl
+
+    const createDropdown = () => {
+      const dropdownEl = document.querySelector('#dropdown')
+      inputSelectEl  = document.createElement('select')
+      outputSelectEl = document.createElement('select')
+      dropdownEl.appendChild(inputSelectEl)
+      dropdownEl.appendChild(outputSelectEl)
+    }
+
+    const createKeyboard = () => {
+      const keyboardEl = document.querySelector('#keyboard')
+      const scale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#',
+        'G', 'G#', 'A', 'A#', 'B', 'C']
+      scale.forEach(s => {
+        const buttonEl = document.createElement('button')
+        buttonEl.innerText = s
+        keyboardEl.appendChild(buttonEl)
+      })
+    }
+
+    const midiMessageHandler = (ev) => {
+      console.log(ev)
+    }
+
+    const addListeners = () => {
+      inputSelectEl.addEventListener('change', ev => {
+        selectedInput = inputs.find(input => input.name === inputSelectEl.value)
+        console.log(`${inputSelectEl.value} was selected as an input`)
+
+        selectedInput.onmidimessage = midiMessageHandler
+      })
+
+      outputSelectEl.addEventListener('change', ev => {
+        selectedOutput = outputs.find(output => output.name === outputSelectEl.value)
+        console.log(`${outputSelectEl.value} was selected as an output`)
+        console.log(selectedOutput)
+      })
+
+      const buttonEls = document.querySelectorAll('button')
+      buttonEls.forEach(buttonEl => {
+        buttonEl.addEventListener('click', ev => {
+          console.log(ev.target)
+        })
+      })
+    }
+
+    const renderDropdown = () => {
+      const inputPlaceholderEl = document.createElement('option')
+      inputPlaceholderEl.innerText = '(Select input)'
+      inputSelectEl.appendChild(inputPlaceholderEl)
+
+      inputs.forEach(input => {
+        const optionEl = document.createElement('option')
+        optionEl.innerText = input.name
+        inputSelectEl.appendChild(optionEl)
+      })
+
+      const outputPlaceholderEl = document.createElement('option')
+      outputPlaceholderEl.innerText = '(Select output)'
+      outputSelectEl.appendChild(outputPlaceholderEl)
+
+      outputs.forEach(output => {
+        const optionEl = document.createElement('option')
+        optionEl.innerText = output.name
+        outputSelectEl.appendChild(optionEl)
+      })
+    }
+
+    const main = () => {
+      createDropdown()
+      createKeyboard()
+      addListeners()
+      const options = {sysex: false}
+      navigator.requestMIDIAccess(options).then(midi => {
+        inputs  = Array.from(midi.inputs).map(input => input[1])
+        outputs = Array.from(midi.outputs).map(output => output[1])
+        renderDropdown()
+      })
+    }
+
+    main()
+  </script>
+</body>
+</html>
